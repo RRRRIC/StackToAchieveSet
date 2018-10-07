@@ -1,0 +1,294 @@
+#include<stdio.h>
+#include <stdlib.h>
+#define STACK_INIT_SIZE 100
+#define STACKINCREMENT 10
+#define OK 1
+#define OVERFLOW -1
+#define MAXSIZE 20 
+#define ERROR 0
+typedef int SElemType;
+typedef int Status;
+typedef struct{
+	SElemType *base;
+	SElemType *top;
+	int stacksize;
+}SqStack;
+Status InitStack(SqStack &S) //创栈
+{
+	S.base=(SElemType *) malloc (STACK_INIT_SIZE * sizeof(SElemType));  //分配基础内存
+	if(!S.base) exit(OVERFLOW);
+	S.top = S.base;
+	S.stacksize =STACK_INIT_SIZE;
+	return OK;
+}
+Status GetTop(SqStack S,SElemType &e)//读取顶端
+{
+	if(S.top == S.base) return ERROR;
+	e = *(S.top-1);
+	return OK;
+}
+Status Push(SqStack &S, SElemType e)  //推入新的元素到栈顶
+{
+	if(S.top-S.base>=S.stacksize)
+	{
+		S.base=(SElemType *)realloc(S.base,(S.stacksize+STACKINCREMENT) * sizeof(SElemType));  //重新分配内存
+		if(!S.base) exit(OVERFLOW);
+		S.top = S.base +S.stacksize;
+		S.stacksize += STACKINCREMENT;  //stacksize 加上增量
+	}
+	* S.top ++=e;
+	return OK;   //成功返回 OK  1
+}
+Status pop(SqStack &S,SElemType &e)  //删除栈的顶端并用e来返回栈的顶端元素
+{
+	if(S.top == S.base) return ERROR;
+	e =* --S.top;
+	return OK;
+}
+void printStack(SqStack &S)  //打印栈
+{
+	SqStack test=S;
+	SElemType e;
+	printf("\n");
+	while(pop(test,e))
+		printf("%d   ",e);
+	printf("\n");
+}
+void ClearStack(SqStack &S)  //清空栈
+{
+	S.top =S.base;
+}
+void inputStack(SqStack &S)   //输入栈
+{
+	SElemType e[MAXSIZE];
+	printf("请输入数字，输入0结束\n");
+	for(int i=0;i<MAXSIZE;i++)             
+	{
+		scanf("%d",&e[i]);
+		if(e[i]==0) break;         
+		Push(S,e[i]);          
+	}
+	printf("\n");
+}
+void unionStack(SqStack &S1,SqStack &S2,SqStack &S3)   //求合集
+{
+	SqStack T1=S1,T2=S2;  //复制S1 S2
+	S3=S1;                 // 合集 S3拥有S1 的所有元素
+	SElemType e,test;
+	int count=0;          //count 是S2中元素在S1的出现的次数
+	while(pop(T2,e))
+	{
+		count=0;                 //归零
+		while(pop(T1,test))
+			if(test==e)
+				count++;       //每重复一次+1
+		if(count==0)
+			Push(S3,e);       //当S2中的元素没有在S1中出现，就加入到S3中
+		T1=S1;                //重置T1
+	}
+}
+void interStack(SqStack &S1,SqStack &S2,SqStack &S3)  //求交集 O(n^2)
+{
+	SqStack T1=S1,T2=S2;   //复制S1 S2
+	SElemType e,test;
+	while(pop(T1,e))        //遍历S1中的元素
+	{
+		while(pop(T2,test))
+		{
+			if(test==e)    //若S1中的元素在S2中出现，便加入到S3中
+			{
+				Push(S3,e);
+				break;   
+			}
+		}
+		T2=S2;    //重置T2
+	} 
+}
+void comStack(SqStack &S1,SqStack &S2,SqStack &S3)  //求差集  O(n^2)
+{ 
+	SqStack T1=S1,T2=S2;  //复制S1 S2
+	SElemType e,test;
+	while(pop(T1,e))         //遍历S1中的元素
+	{
+		while(pop(T2,test))  //当栈内还有元素时pop返回OK
+		{
+			if(test==e)
+				break;       //若S1中元素在S2中出现就提前退出
+		}
+		if(!pop(T2,test))   //T2为空是仍未发现相同元素，便加入到S3中
+			Push(S3,e);
+		T2=S2;             //重置T2
+	}
+}
+Status Element(SqStack S,SElemType e)  //元素判断
+{
+	SqStack T1=S;
+	SElemType test;
+	while(pop(T1,test))
+	{
+		if( test==e )        //只要有一个元素相等，即返回正确
+			return OK;
+	}
+	return ERROR;
+}
+Status Subset(SqStack S1,SqStack S2)      //子集判断
+{
+	SqStack T1=S1,T2=S2;
+	SElemType e;
+	while(pop(T2,e))     //当栈内还有元素时pop返回OK
+		if(!Element(T1,e))        //每个元素都要出现在T1中
+			return ERROR;
+	return OK;
+}
+void JudgeElement(SqStack &S1,SqStack &S2)
+{
+	SElemType temp=0;
+	int choice;
+	printf("**********************************\n");
+	printf("*1.查询是否为第一个集合的元素    *\n");
+	printf("*2.查询是否为第二个集合的元素    *\n");
+	printf("*3.退出                          *\n");
+	printf("**********************************\n");
+	scanf("%d",&choice);
+	printf("请输入元素：");
+	scanf("%d",&temp);
+	switch(choice){
+	case 1:
+		if(Element(S1,temp))                         //判断输入的元素属于S1
+			printf("该数是第一个集合的元素"); 
+		else
+			printf("该数不是第一个集合的元素");
+		break;
+	case 2:
+		if(Element(S2,temp))                           //判断输入的元素属于S2
+			printf("该数是第二个集合的元素");
+		else
+			printf("该数不是第二个集合的元素");
+		break;
+	default:
+		printf("输入错误");
+		break;
+	}
+	printf("\n");
+}
+
+void JudgeSubset(SqStack &S1,SqStack &S2)
+{	
+	int choice;
+	SqStack Test1,Test2;
+	printf("**********************************\n");
+	printf("*1.查询是否为第一个集合的子集    *\n");
+	printf("*2.查询是否为第二个集合的子集    *\n");
+	printf("*3.退出                          *\n");
+	printf("**********************************\n");
+	scanf("%d",&choice);
+	switch(choice){
+	case 1:
+		InitStack(Test1);
+		printf("请输入子集：\n");
+		inputStack(Test1);
+		if(SubSubset(S1,Test1))                   //判断输入的集合是S1的子集
+			printf("该数是第一个集合的子集");
+		else
+			printf("该数不是第一个集合的子集");
+		ClearStack(Test1);
+		break;
+	case 2:
+		InitStack(Test2);
+		printf("请输入子集：");
+		inputStack(Test2);
+		if(Subset(S2,Test2))
+			printf("该数是第二个集合的子集");
+		else
+			printf("该数不是第二个集合的子集");
+		ClearStack(Test2);
+		break;
+	default:
+		printf("输入错误");
+		break;
+	}
+	printf("\n");
+}
+void reinputStack(SqStack &S)  //重新输入S栈
+{
+	ClearStack(S);        //先重置
+	inputStack(S);
+	printf("重置成功");
+}
+void Reset(SqStack &S1,SqStack &S2)
+{
+	printf("**********************************\n");
+	printf("*1.重置第一个集合                *\n");
+	printf("*2.重置第二个集合                *\n");
+	printf("*3.退出                          *\n");
+	printf("**********************************\n");
+	int choice;
+	scanf("%d",&choice);
+	switch(choice){
+	case 1:
+		reinputStack(S1);
+		break;
+	case 2:
+		reinputStack(S2);
+		break;
+	}
+	printf("\n\n");
+}
+void main()
+{
+	int choice;
+	SqStack S1,S2,S3;
+	InitStack(S1);       //初始化三个栈
+	InitStack(S2);
+	InitStack(S3);
+	printf("请输入第一个集合\n");
+	inputStack(S1);           //输入第一个栈
+	printf("请输入第二个集合\n");
+	inputStack(S2);           //输入第二个栈
+	while(1){
+		printf("**********************************\n");
+		printf("* 请输入序号                     *\n");
+		printf("* 1：查询元素是否在集合内        *\n");
+		printf("* 2：查询是否是这两个集合的子集  *\n");
+		printf("* 3：求两个集合的交集            *\n");
+		printf("* 4：求两个集合的合集            *\n");
+		printf("* 5：求两个集合的差集            *\n");
+		printf("* 6: 重新输入两个集合            *\n");
+		printf("* 7：退出                        *\n");
+		printf("**********************************\n");
+		scanf("%d",&choice);
+		if(choice==7) break; //退出系统
+		switch (choice){
+		case 1 :
+			JudgeElement(S1,S2);
+			break;
+		case 2 :
+			JudgeSubset(S1,S2);
+			break;
+		case 3 :
+			ClearStack(S3);  //置空S3
+			interStack(S1,S2,S3);
+			printStack(S3);        //打印结果
+			printf("\n\n");
+			break;
+		case 4 :
+			ClearStack(S3);
+			unionStack(S1,S2,S3);
+			printStack(S3);       //打印结果
+			printf("\n\n");
+			break;
+		case 5 :
+			ClearStack(S3);
+			comStack(S1,S2,S3);
+			printStack(S3);        //打印结果
+			printf("\n\n");
+			break;
+		case 6:
+			Reset(S1,S2);
+		default:
+			printf("输入有误，请重新输入");
+			printf("\n\n");
+			break;
+		}
+	}
+}
